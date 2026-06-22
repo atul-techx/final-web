@@ -389,10 +389,12 @@ def admin_stats():
     })
 
 
+# ── Initialization ──────────────────────────────────────────────
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+init_db()
+
 # ── Entry point ───────────────────────────────────────────────
 if __name__ == '__main__':
-    os.makedirs('uploads', exist_ok=True)
-    init_db()
     print("\n[+] NoteShare (SQLite) is running!")
     print("   [+] Website  ->  http://localhost:5000")
     print("   [+] Admin    ->  http://localhost:5000/admin/login")
