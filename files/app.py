@@ -16,7 +16,9 @@ from functools import wraps
 # ── App config ────────────────────────────────────────────────
 app = Flask(__name__)
 app.secret_key = 'noteshare_secret_key_2026_change_me'
-app.config['UPLOAD_FOLDER'] = 'uploads'
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024   # 50 MB
 
 ALLOWED_EXTENSIONS = {
@@ -36,7 +38,7 @@ SUBJECT_COLORS = {
 }
 
 # ── SQLite connection config ──────────────────────────────────
-DB_FILE = 'noteshare.db'
+DB_FILE = os.path.join(BASE_DIR, 'noteshare.db')
 
 # ── DB helpers ────────────────────────────────────────────────
 def get_db():
@@ -70,12 +72,12 @@ def query(sql, params=(), fetch='all'):
         conn.close()
 
 def init_db():
-    if not os.path.exists(DB_FILE):
-        print("Initializing database...")
-        conn = get_db()
-        with open('schema_sqlite.sql', 'r') as f:
-            conn.executescript(f.read())
-        conn.close()
+    print("Ensuring database tables exist...")
+    conn = get_db()
+    schema_path = os.path.join(BASE_DIR, 'schema_sqlite.sql')
+    with open(schema_path, 'r') as f:
+        conn.executescript(f.read())
+    conn.close()
 
 # ── Settings helpers ──────────────────────────────────────────
 DEFAULT_SETTINGS = {
