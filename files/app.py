@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 
 # ── App config ────────────────────────────────────────────────
-app = Flask(__name__)
+app = Flask(__name__, template_folder='Templates')
 app.secret_key = 'noteshare_secret_key_2026_change_me'
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
