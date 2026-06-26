@@ -623,6 +623,7 @@
     t.className='toast'+(isError?' error':'');
     t.classList.add('show');
     setTimeout(()=>t.classList.remove('show'),3000);
+  }
   // ── Approve Note ──
   async function approveNote(id) {
     if (!confirm('Approve this note? It will be visible to all users.')) return;

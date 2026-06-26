@@ -466,8 +466,8 @@ def admin_stats():
 # ── Entry point ───────────────────────────────────────────────
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)
-    print("\n✅ NoteShare v2 (MySQL) is running!")
-    print("   🌐 Website  →  http://localhost:5000")
-    print("   🔐 Admin    →  http://localhost:5000/admin/login?key=noteshare_admin_2026")
-    print("   🗄️  Database →  MySQL · noteshare\n")
+    print("\n[+] NoteShare v2 (MySQL) is running!")
+    print("   [~] Website  ->  http://localhost:5000")
+    print("   [!] Admin    ->  http://localhost:5000/admin/login?key=noteshare_admin_2026")
+    print("   [*] Database ->  MySQL . noteshare\n")
     app.run(debug=True, port=5000)
