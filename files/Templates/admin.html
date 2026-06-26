@@ -24,6 +24,10 @@
     .nav-item.active{color:#fff;background:rgba(224,33,122,0.15);border-left-color:var(--pink)}
     .nav-item i{font-size:18px;flex-shrink:0}
     .sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;gap:2px}
+    .btn-approve{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:600}
+    .btn-approve:hover{background:#16a34a;color:#fff}
+    .btn-reject{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;font-weight:600}
+    .btn-reject:hover{background:#dc2626;color:#fff}
     .logout-btn{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;text-decoration:none;transition:color .2s;padding:7px 0}
     .logout-btn:hover{color:#f87171}
     .logout-btn.home-link:hover{color:#4ade80}
@@ -132,6 +136,7 @@
   <div class="sidebar-label">Overview</div>
   <a class="nav-item active" onclick="showTab('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
   <div class="sidebar-label">Manage</div>
+  <a class="nav-item" onclick="showTab('pending',this)"><i class="ti ti-clock-hour-4"></i> Pending <span id="pendingBadge" style="background:var(--pink);color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;margin-left:4px">{{ pending_count }}</span></a>
   <a class="nav-item" onclick="showTab('notes',this)"><i class="ti ti-files"></i> All Notes</a>
   <a class="nav-item" onclick="showTab('contact',this)"><i class="ti ti-user-circle"></i> Contact Info</a>
   <div class="sidebar-label">Customize</div>
@@ -224,6 +229,46 @@
     </div>
 
     <!-- ══ NOTES TAB ══ -->
+
+    <!-- ── PENDING TAB ── -->
+    <div id="tab-pending" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <h2 style="font-size:16px;font-weight:700">⏳ Pending Approval</h2>
+        <span style="font-size:12px;color:var(--muted)">Review and approve or reject submitted notes</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Title</th><th>Subject</th><th>Uploader</th><th>Size</th><th>Uploaded</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          {% for note in notes if note.status == 'pending' %}
+          <tr id="pending-row-{{ note.id }}">
+            <td style="font-weight:600">{{ note.title }}</td>
+            <td><span class="tag">{{ note.subject }}</span></td>
+            <td>{{ note.uploader }}</td>
+            <td>{{ note.size }}</td>
+            <td>{{ note.uploaded_at }}</td>
+            <td>
+              <div style="display:flex;gap:6px">
+                <button class="btn-approve" onclick="approveNote('{{ note.id }}')">
+                  <i class="ti ti-check"></i> Approve
+                </button>
+                <button class="btn-reject" onclick="rejectNote('{{ note.id }}')">
+                  <i class="ti ti-x"></i> Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--faint)">
+            <i class="ti ti-circle-check" style="font-size:36px;display:block;margin-bottom:8px;color:#4ade80"></i>
+            No pending notes! All caught up ✅
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
     <div id="tab-notes" style="display:none">
       <div class="section">
         <div class="section-head">
@@ -578,6 +623,36 @@
     t.className='toast'+(isError?' error':'');
     t.classList.add('show');
     setTimeout(()=>t.classList.remove('show'),3000);
+  // ── Approve Note ──
+  async function approveNote(id) {
+    if (!confirm('Approve this note? It will be visible to all users.')) return;
+    const res = await fetch('/admin/note/approve/' + id, {method:'POST'});
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('pending-row-' + id).remove();
+      showToast('✅ Note approved and published!');
+      updatePendingBadge(-1);
+    } else showToast(data.error || 'Error', true);
+  }
+
+  // ── Reject Note ──
+  async function rejectNote(id) {
+    if (!confirm('Reject and delete this note? The file will be removed.')) return;
+    const res = await fetch('/admin/note/reject/' + id, {method:'POST'});
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('pending-row-' + id).remove();
+      showToast('🗑️ Note rejected and removed.');
+      updatePendingBadge(-1);
+    } else showToast(data.error || 'Error', true);
+  }
+
+  function updatePendingBadge(delta) {
+    const badge = document.getElementById('pendingBadge');
+    if (badge) {
+      const cur = parseInt(badge.textContent) + delta;
+      badge.textContent = Math.max(0, cur);
+    }
   }
 </script>
 </body>

@@ -22,8 +22,7 @@ app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024   # 50 MB
 
 ALLOWED_EXTENSIONS = {
-    'pdf', 'png', 'jpg', 'jpeg', 'gif',
-    'doc', 'docx', 'txt', 'ppt', 'pptx'
+    'pdf', 'doc', 'docx', 'txt'
 }
 
 SUBJECT_COLORS = {
@@ -132,18 +131,30 @@ def format_date(date_obj):
             return date_obj
     return date_obj
 
-def load_notes(subject=None):
+def load_notes(subject=None, status='approved'):
     if subject and subject != 'All':
         rows = query(
-            "SELECT * FROM notes WHERE subject = ? ORDER BY uploaded_at DESC",
-            (subject,)
+            "SELECT * FROM notes WHERE subject = ? AND status = ? ORDER BY uploaded_at DESC",
+            (subject, status)
         )
     else:
-        rows = query("SELECT * FROM notes ORDER BY uploaded_at DESC")
+        rows = query("SELECT * FROM notes WHERE status = ? ORDER BY uploaded_at DESC", (status,))
     # Format datetime for templates
     for r in rows:
         r['uploaded_at'] = format_date(r['uploaded_at'])
     return rows
+
+
+def load_all_notes_admin():
+    rows = query("SELECT * FROM notes ORDER BY uploaded_at DESC")
+    for r in rows:
+        r['uploaded_at'] = format_date(r['uploaded_at'])
+    return rows
+
+
+def pending_count():
+    row = query("SELECT COUNT(*) AS cnt FROM notes WHERE status='pending'", fetch='one')
+    return row['cnt'] if row else 0
 
 
 def get_note_by_id(note_id):
@@ -179,7 +190,7 @@ def allowed_file(filename):
 # ── Public routes ─────────────────────────────────────────────
 @app.route('/')
 def index():
-    notes = load_notes()
+    notes = load_notes(status='approved')
     s     = load_settings()
     return render_template('index.html', notes=notes,
                            subject_colors=SUBJECT_COLORS, s=s)
@@ -226,8 +237,8 @@ def upload_file():
     query(
         """INSERT INTO notes
            (id, title, subject, description, uploader,
-            filename, original_name, ext, size, downloads, uploaded_at)
-           VALUES (?,?,?,?,?,?,?,?,?,0,?)""",
+            filename, original_name, ext, size, downloads, status, uploaded_at)
+           VALUES (?,?,?,?,?,?,?,?,?,0,'pending',?)""",
         (note_id, note_title, subject,
          description or f"Notes on {subject}",
          uploader, unique_name, file.filename, ext, size_str, now_str),
@@ -247,10 +258,11 @@ def upload_file():
         'size':          size_str,
         'uploaded_at':   datetime.now().strftime('%d %b %Y, %I:%M %p'),
         'downloads':     0,
+        'status':        'pending',
         'icon_class':    colors[0],
         'icon_name':     colors[1],
     }
-    return jsonify({'success': True, 'note': note})
+    return jsonify({'success': True, 'pending': True, 'message': '✅ Your note has been submitted! It will appear after admin approval.', 'note': note})
 
 
 @app.route('/download/<filename>')
@@ -267,7 +279,7 @@ def download_file(filename):
 @app.route('/api/notes')
 def api_notes():
     subject = request.args.get('subject', '')
-    notes   = load_notes(subject)
+    notes   = load_notes(subject, status='approved')
     return jsonify(notes)
 
 
@@ -299,17 +311,40 @@ def admin_logout():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    notes    = load_notes()
+    notes    = load_all_notes_admin()
     s        = load_settings()
     total_dl = sum(n.get('downloads', 0) for n in notes)
+    pending  = pending_count()
 
-    # subject → count
+    approved = [n for n in notes if n['status'] == 'approved']
     subjects = {}
-    for n in notes:
+    for n in approved:
         subjects[n['subject']] = subjects.get(n['subject'], 0) + 1
 
     return render_template('admin.html', notes=notes, s=s,
-                           total_dl=total_dl, subjects=subjects)
+                           total_dl=total_dl, subjects=subjects, pending_count=pending)
+
+
+@app.route('/admin/note/approve/<note_id>', methods=['POST'])
+@admin_required
+def admin_approve_note(note_id):
+    query("UPDATE notes SET status='approved' WHERE id = ?", (note_id,), fetch='none')
+    return jsonify({'success': True})
+
+
+@app.route('/admin/note/reject/<note_id>', methods=['POST'])
+@admin_required
+def admin_reject_note(note_id):
+    note = get_note_by_id(note_id)
+    if not note:
+        return jsonify({'error': 'Note not found'}), 404
+
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], note['filename'])
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    query("DELETE FROM notes WHERE id = ?", (note_id,), fetch='none')
+    return jsonify({'success': True})
 
 
 @app.route('/admin/note/delete/<note_id>', methods=['POST'])

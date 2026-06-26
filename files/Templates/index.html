@@ -568,9 +568,9 @@
       <i class="ti ti-cloud-upload" id="dropIcon"></i>
       <p id="dropText">Click to select a file or drag & drop here</p>
       <p class="file-name" id="fileName"></p>
-      <span>PDF, Images, Word, PPT, TXT — Max 50MB</span>
+      <span>PDF, Word, TXT — Max 50MB</span>
     </div>
-    <input type="file" id="fileInput" style="display:none" accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.txt,.ppt,.pptx" onchange="handleFileSelect(event)" />
+    <input type="file" id="fileInput" style="display:none" accept=".pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)" />
 
     <div class="form-row">
       <div class="form-group">
@@ -705,8 +705,10 @@
       if (data.success) {
         setTimeout(() => {
           closeModal();
-          addNoteCard(data.note);
-          showToast('✅ Note uploaded successfully!');
+          if (!data.pending) {
+            addNoteCard(data.note);
+          }
+          showToast(data.message || '✅ Note uploaded successfully!');
           resetModal();
         }, 400);
       } else {

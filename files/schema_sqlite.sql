@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS notes (
   ext          VARCHAR(20)   NOT NULL,
   size         VARCHAR(30)   NOT NULL,
   downloads    INT           NOT NULL DEFAULT 0,
+  status       VARCHAR(20)   NOT NULL DEFAULT 'pending',
   uploaded_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
