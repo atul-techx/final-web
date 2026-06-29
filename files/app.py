@@ -299,13 +299,14 @@ def admin_login():
 
     error = None
     if request.method == 'POST':
+        un = request.form.get('username', '')
         pw = request.form.get('password', '')
         s  = load_settings()
-        if pw == s.get('admin_password', 'admin'):
+        if un == s.get('admin_username', 'admin') and pw == s.get('admin_password', 'admin'):
             session['admin_logged_in'] = True
             session.permanent = False
             return redirect(url_for('admin_dashboard'))
-        error = 'Wrong password. Please try again.'
+        error = 'Invalid username or password. Please try again.'
 
     return render_template('admin_login.html', error=error)
 
@@ -410,15 +411,20 @@ def admin_save_settings():
         if key in data:
             save_setting(key, data[key])
 
-    # Password change
-    if data.get('new_password'):
+    # Credentials change
+    if data.get('new_password') or data.get('new_username'):
         current = data.get('current_password', '')
         s = load_settings()
         if current != s.get('admin_password', 'admin'):
             return jsonify({'error': 'Current password is incorrect!'}), 400
-        if len(data['new_password']) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters!'}), 400
-        save_setting('admin_password', data['new_password'])
+            
+        if data.get('new_password'):
+            if len(data['new_password']) < 6:
+                return jsonify({'error': 'Password must be at least 6 characters!'}), 400
+            save_setting('admin_password', data['new_password'])
+            
+        if data.get('new_username'):
+            save_setting('admin_username', data['new_username'])
 
     return jsonify({'success': True})
 
