@@ -425,15 +425,19 @@
     <!-- ══ SECURITY TAB ══ -->
     <div id="tab-security" style="display:none">
       <div class="section">
-        <div class="section-head"><h3><i class="ti ti-shield-lock"></i> Change Admin Password</h3></div>
+        <div class="section-head"><h3><i class="ti ti-shield-lock"></i> Update Admin Credentials</h3></div>
         <div class="settings-grid single" style="max-width:460px">
           <div class="form-group">
-            <label>Current Password</label>
-            <input type="password" id="current_password" placeholder="Enter current password" />
+            <label>New Username</label>
+            <input type="text" id="new_username" placeholder="Enter new username (leave blank to keep current)" />
+          </div>
+          <div class="form-group">
+            <label>Current Password (Required)</label>
+            <input type="password" id="current_password" placeholder="Enter current password to verify" />
           </div>
           <div class="form-group">
             <label>New Password</label>
-            <input type="password" id="new_password" placeholder="Enter new password (min 6 chars)" />
+            <input type="password" id="new_password" placeholder="Enter new password (min 6 chars, or leave blank)" />
           </div>
           <div class="form-group">
             <label>Confirm New Password</label>
@@ -441,7 +445,7 @@
           </div>
         </div>
         <div class="save-bar">
-          <button class="btn-sm btn-pink" onclick="changePassword()"><i class="ti ti-key"></i> Update Password</button>
+          <button class="btn-sm btn-pink" onclick="changeCredentials()"><i class="ti ti-key"></i> Update Credentials</button>
         </div>
       </div>
       <div class="section" style="margin-top:20px">
@@ -620,20 +624,27 @@
   function previewColor(val) { document.getElementById('primary_color_hex').value=val; }
   function syncColor(val) { if(/^#[0-9a-fA-F]{6}$/.test(val)) document.getElementById('primary_color').value=val; }
 
-  // ── Change Password ──
-  async function changePassword() {
+  // ── Change Credentials ──
+  async function changeCredentials() {
+    const un = document.getElementById('new_username').value;
     const np = document.getElementById('new_password').value;
     const cp = document.getElementById('confirm_password').value;
-    if(np.length < 6) { showToast('Password must be at least 6 characters!',true); return; }
-    if(np !== cp) { showToast('Passwords do not match!',true); return; }
+    const cur_p = document.getElementById('current_password').value;
+    
+    if(!cur_p) { showToast('Current password is required!', true); return; }
+    if(np && np.length < 6) { showToast('Password must be at least 6 characters!',true); return; }
+    if(np && np !== cp) { showToast('Passwords do not match!',true); return; }
+    
     const data = {
-      current_password: document.getElementById('current_password').value,
-      new_password: np,
+      current_password: cur_p,
     };
+    if(un) data.new_username = un;
+    if(np) data.new_password = np;
+    
     const res = await fetch('/admin/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     const json = await res.json();
     if(json.success) {
-      showToast('Password changed! Please login again.');
+      showToast('Credentials updated! Please login again.');
       setTimeout(()=>window.location='/admin/logout',1500);
     } else showToast(json.error||'Failed',true);
   }

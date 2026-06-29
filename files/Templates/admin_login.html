@@ -46,10 +46,17 @@
 
     <form method="POST">
       <div class="form-group">
+        <label>Username</label>
+        <div class="input-wrap">
+          <i class="ti ti-user"></i>
+          <input type="text" name="username" placeholder="Enter admin username" required autofocus />
+        </div>
+      </div>
+      <div class="form-group">
         <label>Password</label>
         <div class="input-wrap">
           <i class="ti ti-lock"></i>
-          <input type="password" name="password" id="pwInput" placeholder="Enter admin password" required autofocus />
+          <input type="password" name="password" id="pwInput" placeholder="Enter admin password" required />
           <span class="toggle-pw" onclick="togglePw()"><i class="ti ti-eye" id="eyeIcon"></i></span>
         </div>
       </div>
