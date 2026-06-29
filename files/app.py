@@ -265,6 +265,14 @@ def upload_file():
     return jsonify({'success': True, 'pending': True, 'message': '✅ Your note has been submitted! It will appear after admin approval.', 'note': note})
 
 
+@app.route('/preview/<filename>')
+@admin_required
+def preview_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'], filename, as_attachment=False
+    )
+
+
 @app.route('/download/<filename>')
 def download_file(filename):
     query(
@@ -343,7 +351,7 @@ def admin_reject_note(note_id):
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    query("DELETE FROM notes WHERE id = ?", (note_id,), fetch='none')
+    query("UPDATE notes SET status='rejected' WHERE id = ?", (note_id,), fetch='none')
     return jsonify({'success': True})
 
 

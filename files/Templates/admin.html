@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -41,7 +41,7 @@
     .view-site{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;padding:7px 14px;border:0.5px solid var(--border);border-radius:var(--radius)}
     .view-site:hover{color:var(--text)}
 
-    .content{padding:28px;flex:1}
+    .content{padding:28px;flex:1;max-width:1200px;margin:0 auto;width:100%}
 
     /* STATS CARDS */
     .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
@@ -164,10 +164,27 @@
     <div id="tab-dashboard">
       <div class="stats-row">
         <div class="stat-card pink">
-          <div class="label">Total Notes</div>
+          <div class="label">Total Uploaded</div>
           <div class="value">{{ notes|length }}</div>
-          <div class="sub">Uploaded by students</div>
+          <div class="sub">All submissions</div>
         </div>
+        <div class="stat-card" style="border-left: 4px solid #10b981;">
+          <div class="label">Live on Website</div>
+          <div class="value">{{ notes|selectattr('status', 'equalto', 'approved')|list|length }}</div>
+          <div class="sub">Approved & visible</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+          <div class="label">Pending</div>
+          <div class="value">{{ notes|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+          <div class="sub">Awaiting review</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #ef4444;">
+          <div class="label">Rejected</div>
+          <div class="value">{{ notes|selectattr('status', 'equalto', 'rejected')|list|length }}</div>
+          <div class="sub">Not approved</div>
+        </div>
+      </div>
+      <div class="stats-row">
         <div class="stat-card">
           <div class="label">Total Downloads</div>
           <div class="value">{{ total_dl }}</div>
@@ -250,6 +267,9 @@
             <td>{{ note.uploaded_at }}</td>
             <td>
               <div style="display:flex;gap:6px">
+                <a href="/preview/{{ note.filename }}" target="_blank" class="btn-approve" style="background:#e0f2fe;color:#0284c7;border-color:#bae6fd;text-decoration:none;">
+                  <i class="ti ti-eye"></i> Preview
+                </a>
                 <button class="btn-approve" onclick="approveNote('{{ note.id }}')">
                   <i class="ti ti-check"></i> Approve
                 </button>
@@ -290,6 +310,9 @@
               <td style="color:var(--faint)">{{ note.uploaded_at.split(',')[0] }}</td>
               <td>
                 <div class="td-actions">
+                  <a href="/preview/{{ note.filename }}" target="_blank" class="btn-sm btn-ghost-sm" style="text-decoration:none">
+                    <i class="ti ti-eye"></i> Preview
+                  </a>
                   <button class="btn-sm btn-ghost-sm" onclick="openEditNote('{{ note.id }}','{{ note.title|replace("'","\\'") }}','{{ note.subject }}','{{ note.description|replace("'","\\'") }}','{{ note.uploader }}')">
                     <i class="ti ti-pencil"></i> Edit
                   </button>
